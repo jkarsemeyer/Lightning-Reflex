@@ -521,19 +521,19 @@ target.addEventListener('click', () => {
   if (state !== 'ready') return;
 
   const ms    = Math.round(performance.now() - showTime);
-  const elite = ms < 200;
+  const elite = ms < 350;
   const { x, y } = getTargetCenter();
 
   target.style.display = 'none';
   state = 'idle';
 
   // FX based on speed
-  const count = elite ? 120 : ms < 300 ? 70 : ms < 400 ? 45 : 25;
+  const count = elite ? 120 : ms < 500 ? 70 : ms < 650 ? 45 : 25;
   triggerFX(x, y, count, elite);
   if (elite) { launchConfetti(); shake(6); }
-  else if (ms < 300) shake(3);
+  else if (ms < 500) shake(3);
 
-  flashArena(elite ? '#fbbf24' : ms < 300 ? '#4ade80' : '#a855f7');
+  flashArena(elite ? '#fbbf24' : ms < 500 ? '#4ade80' : '#a855f7');
 
   rounds++;
   roundEl.textContent = rounds;
@@ -553,9 +553,9 @@ target.addEventListener('click', () => {
 
   let msg =
     elite       ? pick(eliteMessages) :
-    ms < 300    ? pick(fastMessages)  :
-    ms < 400    ? pick(goodMessages)  :
-    ms < 500    ? pick(okMessages)    :
+    ms < 500    ? pick(fastMessages)  :
+    ms < 650    ? pick(goodMessages)  :
+    ms < 850    ? pick(okMessages)    :
                   pick(slowMessages);
 
   message.style.display = 'flex';
