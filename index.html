@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Archer, Atlas & Anthem's REFLEX TESTER ⚡</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f0c29;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+      user-select: none;
+      padding: 1rem;
+    }
+
+    .names {
+      font-size: 1.3rem;
+      color: #f0abfc;
+      margin-bottom: 0.2rem;
+      text-align: center;
+      letter-spacing: 2px;
+      font-weight: 700;
+    }
+
+    h1 {
+      font-size: 2rem;
+      letter-spacing: 1px;
+      margin-bottom: 0.2rem;
+      text-shadow: 0 0 20px #a78bfa;
+      text-align: center;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #c4b5fd;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .scoreboard {
+      display: flex;
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    .score-box {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      padding: 0.8rem 1.4rem;
+      text-align: center;
+      min-width: 100px;
+    }
+
+    .score-box .label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #a78bfa;
+      margin-bottom: 0.3rem;
+    }
+
+    .score-box .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      transition: color 0.3s;
+    }
+
+    /* Arena */
+    #arena-wrap {
+      position: relative;
+      width: 380px;
+      height: 280px;
+    }
+
+    #arena {
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+      transition: transform 0.05s;
+    }
+
+    /* Particle canvas sits on top of arena, pointer-events:none so clicks pass through */
+    #fx-canvas {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #message {
+      font-size: 1.1rem;
+      color: #c4b5fd;
+      text-align: center;
+      padding: 1rem;
+      line-height: 1.7;
+      pointer-events: none;
+      position: relative;
+      z-index: 5;
+    }
+
+    #target {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #f0abfc, #a855f7);
+      box-shadow: 0 0 30px #d946ef, 0 0 60px #a855f766;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      z-index: 5;
+      animation: floatin 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes floatin {
+      from { transform: translateY(-4px) scale(1);   box-shadow: 0 0 25px #d946ef, 0 0 50px #a855f766; }
+      to   { transform: translateY( 4px) scale(1.04); box-shadow: 0 0 45px #d946ef, 0 0 90px #a855f799; }
+    }
+
+    #start-btn {
+      margin-top: 1.8rem;
+      padding: 0.85rem 2.5rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px #7c3aed88;
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+      z-index: 1;
+    }
+
+    #start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px #7c3aedbb; }
+    #start-btn:active { transform: translateY(0); }
+    #start-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .history-label {
+      margin-top: 1.5rem;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #7c6faa;
+    }
+
+    #history {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 380px;
+    }
+
+    .history-chip {
+      background: rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 0.25rem 0.7rem;
+      font-size: 0.85rem;
+      color: #c4b5fd;
+      transition: background 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="names">ARCHER · ATLAS · ANTHEM</div>
+  <h1>⚡ REFLEX TESTER ⚡</h1>
+  <p class="subtitle">Who's the fastest in the family?</p>
+
+  <div class="scoreboard">
+    <div class="score-box"><div class="label">Last</div><div class="value" id="last-score">—</div></div>
+    <div class="score-box"><div class="label">Best</div><div class="value" id="best-score">—</div></div>
+    <div class="score-box"><div class="label">Rounds</div><div class="value" id="round-count">0</div></div>
+  </div>
+
+  <div id="arena-wrap">
+    <div id="arena">
+      <div id="message">Press <strong>Start</strong> to play!<br/><span style="font-size:0.85rem;color:#7c6faa">Click the orb the instant it appears.</span></div>
+      <div id="target">✨</div>
+    </div>
+    <canvas id="fx-canvas"></canvas>
+  </div>
+
+  <button id="start-btn">Start</button>
+  <div class="history-label">Recent times (ms)</div>
+  <div id="history"></div>
+
+<script>
+// ─── DOM ───────────────────────────────────────────────────────────────
+const arena     = document.getElementById('arena');
+const arenaWrap = document.getElementById('arena-wrap');
+const target    = document.getElementById('target');
+const message   = document.getElementById('message');
+const startBtn  = document.getElementById('start-btn');
+const lastEl    = document.getElementById('last-score');
+const bestEl    = document.getElementById('best-score');
+const roundEl   = document.getElementById('round-count');
+const historyEl = document.getElementById('history');
+const canvas    = document.getElementById('fx-canvas');
+const ctx       = canvas.getContext('2d');
+
+// ─── Canvas sizing ─────────────────────────────────────────────────────
+function resizeCanvas() {
+  canvas.width  = arenaWrap.clientWidth;
+  canvas.height = arenaWrap.clientHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ─── Particle system ──────────────────────────────────────────────────
+const particles = [];
+const shockwaves = [];
+
+const PALETTE = [
+  '#f0abfc','#d946ef','#a855f7','#818cf8',
+  '#38bdf8','#4ade80','#fbbf24','#fb7185'
+];
+
+class Particle {
+  constructor(x, y, elite) {
+    const angle  = Math.random() * Math.PI * 2;
+    const speed  = elite
+      ? 4 + Math.random() * 10
+      : 2 + Math.random() * 7;
+    this.x  = x;
+    this.y  = y;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed - (elite ? 3 : 1); // bias upward
+    this.gravity   = 0.18 + Math.random() * 0.12;
+    this.drag      = 0.97;
+    this.life      = 1;
+    this.decay     = elite
+      ? 0.012 + Math.random() * 0.01
+      : 0.018 + Math.random() * 0.014;
+    this.color     = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+    this.radius    = elite
+      ? 3 + Math.random() * 5
+      : 2 + Math.random() * 4;
+    // Some particles are little sparks (lines), most are circles
+    this.isSpark   = Math.random() < 0.3;
+    this.sparkLen  = 4 + Math.random() * 12;
+    // Twinkle
+    this.twinkle   = Math.random() < 0.4;
+    this.twinkleT  = Math.random() * Math.PI * 2;
+  }
+
+  update() {
+    this.vx *= this.drag;
+    this.vy *= this.drag;
+    this.vy += this.gravity;
+    this.x  += this.vx;
+    this.y  += this.vy;
+    this.life -= this.decay;
+    if (this.twinkle) this.twinkleT += 0.25;
+  }
+
+  draw(ctx) {
+    const alpha = Math.max(0, this.life);
+    const r = this.twinkle
+      ? this.radius * (0.6 + 0.4 * Math.abs(Math.sin(this.twinkleT)))
+      : this.radius;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    if (this.isSpark) {
+      // Glowing spark line
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth   = r * 0.6;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur  = 8;
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(this.x - this.vx * this.sparkLen * 0.2,
+                 this.y - this.vy * this.sparkLen * 0.2);
+      ctx.stroke();
+    } else {
+      // Glowing circle
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur  = 12;
+      ctx.fillStyle   = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+class Shockwave {
+  constructor(x, y, color) {
+    this.x = x; this.y = y;
+    this.radius = 10;
+    this.maxR   = 90;
+    this.life   = 1;
+    this.color  = color || '#a855f7';
+  }
+  update() {
+    this.radius += (this.maxR - this.radius) * 0.12;
+    this.life   -= 0.045;
+  }
+  draw(ctx) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, this.life) * 0.7;
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth   = 2.5;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur  = 16;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function spawnBurst(x, y, count, elite) {
+  for (let i = 0; i < count; i++) particles.push(new Particle(x, y, elite));
+  shockwaves.push(new Shockwave(x, y, elite ? '#fbbf24' : '#a855f7'));
+  if (elite) shockwaves.push(new Shockwave(x, y, '#f0abfc'));
+}
+
+// ─── Confetti for elite scores ─────────────────────────────────────────
+class Confetti {
+  constructor() {
+    this.x    = Math.random() * canvas.width;
+    this.y    = -10;
+    this.vx   = (Math.random() - 0.5) * 2;
+    this.vy   = 2 + Math.random() * 3;
+    this.rot  = Math.random() * Math.PI * 2;
+    this.rotV = (Math.random() - 0.5) * 0.2;
+    this.w    = 6 + Math.random() * 8;
+    this.h    = 3 + Math.random() * 5;
+    this.color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+    this.life  = 1;
+  }
+  update() {
+    this.x   += this.vx;
+    this.y   += this.vy;
+    this.rot += this.rotV;
+    this.life -= 0.006;
+  }
+  draw(ctx) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.fillStyle   = this.color;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot);
+    ctx.fillRect(-this.w/2, -this.h/2, this.w, this.h);
+    ctx.restore();
+  }
+}
+const confetti = [];
+function launchConfetti() {
+  for (let i = 0; i < 80; i++) confetti.push(new Confetti());
+}
+
+// ─── Animation loop ───────────────────────────────────────────────────
+let animRunning = false;
+function animLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = shockwaves.length - 1; i >= 0; i--) {
+    shockwaves[i].update();
+    shockwaves[i].draw(ctx);
+    if (shockwaves[i].life <= 0) shockwaves.splice(i, 1);
+  }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    particles[i].draw(ctx);
+    if (particles[i].life <= 0) particles.splice(i, 1);
+  }
+
+  for (let i = confetti.length - 1; i >= 0; i--) {
+    confetti[i].update();
+    confetti[i].draw(ctx);
+    if (confetti[i].life <= 0) confetti.splice(i, 1);
+  }
+
+  const busy = particles.length > 0 || shockwaves.length > 0 || confetti.length > 0;
+  if (busy) requestAnimationFrame(animLoop);
+  else animRunning = false;
+}
+
+function triggerFX(x, y, count, elite) {
+  spawnBurst(x, y, count, elite);
+  if (!animRunning) { animRunning = true; requestAnimationFrame(animLoop); }
+}
+
+// ─── Screen shake ─────────────────────────────────────────────────────
+function shake(intensity) {
+  const frames = 10;
+  let f = 0;
+  function step() {
+    if (f++ >= frames) { arena.style.transform = ''; return; }
+    const dx = (Math.random() - 0.5) * intensity * (1 - f/frames);
+    const dy = (Math.random() - 0.5) * intensity * (1 - f/frames);
+    arena.style.transform = `translate(${dx}px,${dy}px)`;
+    requestAnimationFrame(step);
+  }
+  step();
+}
+
+// ─── Flash overlay ────────────────────────────────────────────────────
+function flashArena(color) {
+  const el = document.createElement('div');
+  Object.assign(el.style, {
+    position:'absolute', inset:0, borderRadius:'18px',
+    background: color, opacity: '0.35', pointerEvents: 'none',
+    zIndex: '4', transition: 'opacity 0.35s'
+  });
+  arena.appendChild(el);
+  requestAnimationFrame(() => { el.style.opacity = '0'; });
+  setTimeout(() => el.remove(), 400);
+}
+
+// ─── Game state ───────────────────────────────────────────────────────
+let state    = 'idle';
+let showTimer = null;
+let showTime  = null;
+let bestMs    = Infinity;
+let rounds    = 0;
+const recentTimes = [];
+
+const eliteMessages = [
+  "🏆 ELITE! Archer's piano fingers are FAST!",
+  "🏆 ELITE! Deadpool would be proud, Atlas!",
+  "🏆 ELITE! Even Anthem stopped snuggling mom to gasp!",
+  "🏆 ELITE! Trophy-worthy reflexes, Archer!",
+];
+const fastMessages = [
+  "⚡ Lightning fast! Deadpool-approved, Atlas!",
+  "⚡ Those piano hands are LETHAL, Archer!",
+  "⚡ Anthem's too busy cuddling mom to beat that!",
+  "⚡ Faster than Deadpool drawing a sword!",
+];
+const goodMessages = [
+  "😎 Nice! Atlas, did you draw that fast today?",
+  "😎 Solid! Archer played a whole concerto faster though.",
+  "😎 Not bad! Anthem's snuggling faster than this.",
+];
+const okMessages = [
+  "👍 Decent! Atlas, Deadpool had better reaction time.",
+  "👍 Room to improve! Archer's piano teacher is judging.",
+  "👍 You're trying, like Anthem trying NOT to wake Mom...",
+  "👍 Not bad! Anthem wakes Mom up faster than that.",
+];
+const slowMessages = [
+  "🐢 Slower than Anthem sneaking into Mom's bed for snuggles.",
+  "🐢 Even Deadpool facepalmed. Try again, Atlas!",
+  "🐢 Archer could play a whole piano piece in that time.",
+  "🐢 Mom is already awake. Anthem is already snuggling.",
+];
+const earlyMessages = [
+  "😬 TOO EARLY! Deadpool says: patience, Atlas.",
+  "😬 TOO EARLY! Even Anthem waits for Mom to wake up first before snuggles. Kinda.",
+  "😬 TOO EARLY! Archer always waits for the downbeat.",
+];
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function randomPos() {
+  const m = 55;
+  return {
+    x: rand(m, arena.clientWidth  - 80 - m),
+    y: rand(m, arena.clientHeight - 80 - m)
+  };
+}
+
+function getTargetCenter() {
+  const r = target.getBoundingClientRect();
+  const a = arena.getBoundingClientRect();
+  return { x: r.left - a.left + r.width/2, y: r.top - a.top + r.height/2 };
+}
+
+function startRound() {
+  state = 'waiting';
+  startBtn.disabled = true;
+  target.style.display = 'none';
+  message.style.display = 'flex';
+  message.innerHTML = '⏳ Get ready…';
+
+  const delay = rand(1500, 4000);
+  showTimer = setTimeout(() => {
+    const pos = randomPos();
+    target.style.left = pos.x + 'px';
+    target.style.top  = pos.y + 'px';
+    target.style.display = 'flex';
+    message.style.display = 'none';
+    showTime = performance.now();
+    state = 'ready';
+  }, delay);
+}
+
+target.addEventListener('click', () => {
+  if (state !== 'ready') return;
+
+  const ms    = Math.round(performance.now() - showTime);
+  const elite = ms < 200;
+  const { x, y } = getTargetCenter();
+
+  target.style.display = 'none';
+  state = 'idle';
+
+  // FX based on speed
+  const count = elite ? 120 : ms < 300 ? 70 : ms < 400 ? 45 : 25;
+  triggerFX(x, y, count, elite);
+  if (elite) { launchConfetti(); shake(6); }
+  else if (ms < 300) shake(3);
+
+  flashArena(elite ? '#fbbf24' : ms < 300 ? '#4ade80' : '#a855f7');
+
+  rounds++;
+  roundEl.textContent = rounds;
+  lastEl.textContent  = ms + ' ms';
+
+  if (ms < bestMs) {
+    bestMs = ms;
+    bestEl.textContent = ms + ' ms';
+    bestEl.style.color = '#4ade80';
+    setTimeout(() => bestEl.style.color = '', 800);
+  }
+
+  recentTimes.unshift(ms);
+  if (recentTimes.length > 8) recentTimes.pop();
+  historyEl.innerHTML = recentTimes
+    .map(t => `<span class="history-chip">${t}</span>`).join('');
+
+  let msg =
+    elite       ? pick(eliteMessages) :
+    ms < 300    ? pick(fastMessages)  :
+    ms < 400    ? pick(goodMessages)  :
+    ms < 500    ? pick(okMessages)    :
+                  pick(slowMessages);
+
+  message.style.display = 'flex';
+  message.innerHTML = `<span style="font-size:1.4rem">${ms} ms</span><br/>${msg}`;
+
+  startBtn.disabled = false;
+  startBtn.textContent = 'Again!';
+});
+
+arena.addEventListener('click', (e) => {
+  if (state === 'waiting' && e.target !== target) {
+    clearTimeout(showTimer);
+    state = 'idle';
+    flashArena('#f87171');
+    shake(4);
+    const rect = arena.getBoundingClientRect();
+    triggerFX(e.clientX - rect.left, e.clientY - rect.top, 20, false);
+    message.innerHTML = pick(earlyMessages);
+    startBtn.disabled = false;
+    startBtn.textContent = 'Try Again';
+  }
+});
+
+startBtn.addEventListener('click', () => {
+  startBtn.textContent = 'Start';
+  startRound();
+});
+</script>
+</body>
+</html>
