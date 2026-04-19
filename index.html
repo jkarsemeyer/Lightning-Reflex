@@ -1,586 +1,906 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Archer, Atlas & Anthem's REFLEX TESTER ⚡</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Archer · Atlas · Anthem — Reflex Tester</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --amethyst:     #a855f7;
+      --amethyst-dim: rgba(168,85,247,0.25);
+      --gold:         #f59e0b;
+      --gold-dim:     rgba(245,158,11,0.3);
+      --crystal:      #38bdf8;
+      --text:         #ede8f8;
+      --muted:        #7c6faa;
+      --panel:        rgba(8, 4, 28, 0.72);
+      --border:       rgba(168,85,247,0.22);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; min-height: 100%; overflow-x: hidden; }
 
     body {
-      min-height: 100vh;
+      font-family: 'Rajdhani', sans-serif;
+      color: var(--text);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #0f0c29;
-      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-      font-family: 'Segoe UI', sans-serif;
-      color: white;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
       user-select: none;
-      padding: 1rem;
     }
 
+    /* ── WebGL background ───────────────────────────── */
+    #bg {
+      position: fixed;
+      inset: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0;
+      background: #050111;
+    }
+
+    /* ── App shell ──────────────────────────────────── */
+    #app {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    /* ── Title ──────────────────────────────────────── */
     .names {
-      font-size: 1.3rem;
-      color: #f0abfc;
-      margin-bottom: 0.2rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.4em;
+      color: var(--muted);
+      text-transform: uppercase;
       text-align: center;
-      letter-spacing: 2px;
-      font-weight: 700;
+      margin-bottom: 0.5rem;
     }
 
     h1 {
-      font-size: 2rem;
-      letter-spacing: 1px;
-      margin-bottom: 0.2rem;
-      text-shadow: 0 0 20px #a78bfa;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.5rem, 5vw, 2.3rem);
+      font-weight: 700;
+      letter-spacing: 0.1em;
       text-align: center;
+      text-shadow: 0 0 40px rgba(168,85,247,0.4), 0 0 80px rgba(168,85,247,0.15);
+      margin-bottom: 0.25rem;
     }
 
-    .subtitle {
-      font-size: 0.9rem;
-      color: #c4b5fd;
-      margin-bottom: 2rem;
+    .tagline {
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      text-transform: uppercase;
       text-align: center;
+      margin-bottom: 1.6rem;
     }
 
+    /* ── Scoreboard ─────────────────────────────────── */
     .scoreboard {
       display: flex;
-      gap: 1.2rem;
-      margin-bottom: 2rem;
+      gap: 0.75rem;
+      margin-bottom: 1.4rem;
+      width: 100%;
+      max-width: 460px;
     }
 
     .score-box {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.15);
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 0.8rem 1.4rem;
+      padding: 0.7rem 0.5rem;
       text-align: center;
-      min-width: 100px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      position: relative;
+      overflow: hidden;
     }
 
-    .score-box .label {
-      font-size: 0.65rem;
+    .score-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(168,85,247,0.07) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
+    .score-box .lbl {
+      font-size: 0.58rem;
+      letter-spacing: 0.25em;
+      color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #a78bfa;
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.25rem;
     }
 
-    .score-box .value {
-      font-size: 1.5rem;
+    .score-box .val {
+      font-size: 1.35rem;
       font-weight: 700;
-      transition: color 0.3s;
+      transition: color 0.4s, text-shadow 0.4s;
     }
 
-    /* Arena */
+    .val.new-best {
+      color: var(--gold);
+      text-shadow: 0 0 20px var(--gold-dim);
+    }
+
+    /* ── Arena ──────────────────────────────────────── */
     #arena-wrap {
       position: relative;
-      width: 380px;
-      height: 280px;
+      width: min(580px, calc(100vw - 2rem));
+      height: clamp(240px, 38vw, 390px);
     }
 
     #arena {
       width: 100%;
       height: 100%;
-      background: rgba(255,255,255,0.05);
-      border: 2px solid rgba(255,255,255,0.1);
-      border-radius: 20px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 22px;
       position: relative;
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: default;
-      transition: transform 0.05s;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      transition: border-color 0.35s, box-shadow 0.35s, transform 0.04s;
     }
 
-    /* Particle canvas sits on top of arena, pointer-events:none so clicks pass through */
-    #fx-canvas {
+    /* Subtle inner radial sheen */
+    #arena::before {
+      content: '';
       position: absolute;
       inset: 0;
-      border-radius: 20px;
+      background:
+        radial-gradient(ellipse at 20% 15%, rgba(168,85,247,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 85%, rgba(56,189,248,0.04) 0%, transparent 55%);
+      pointer-events: none;
+      border-radius: 22px;
+    }
+
+    #arena.ready {
+      border-color: rgba(168,85,247,0.55);
+      box-shadow: 0 0 35px rgba(168,85,247,0.18), inset 0 0 30px rgba(168,85,247,0.06);
+      cursor: crosshair;
+    }
+
+    /* ── Particle canvas ────────────────────────────── */
+    #fx {
+      position: absolute;
+      inset: 0;
+      border-radius: 22px;
       pointer-events: none;
       z-index: 10;
     }
 
-    #message {
-      font-size: 1.1rem;
-      color: #c4b5fd;
+    /* ── Message ────────────────────────────────────── */
+    #msg {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-      padding: 1rem;
+      padding: 1.2rem 2rem;
       line-height: 1.7;
       pointer-events: none;
       position: relative;
       z-index: 5;
+      gap: 0.25rem;
     }
 
+    #msg .headline {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.3rem, 4vw, 1.7rem);
+      font-weight: 700;
+      color: var(--text);
+      text-shadow: 0 0 25px rgba(168,85,247,0.3);
+    }
+
+    #msg .headline.gold {
+      color: var(--gold);
+      text-shadow: 0 0 30px var(--gold-dim), 0 0 60px rgba(245,158,11,0.15);
+    }
+
+    #msg .sub {
+      font-size: clamp(0.85rem, 2.2vw, 1rem);
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    #msg .new-best-badge {
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-top: 0.1rem;
+    }
+
+    /* ── Orb / Target ───────────────────────────────── */
     #target {
       position: absolute;
-      width: 80px;
-      height: 80px;
+      width: clamp(74px, 13vw, 104px);
+      height: clamp(74px, 13vw, 104px);
       border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #f0abfc, #a855f7);
-      box-shadow: 0 0 30px #d946ef, 0 0 60px #a855f766;
       cursor: pointer;
       display: none;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
       z-index: 5;
-      animation: floatin 2s ease-in-out infinite alternate;
+      /* Gem-like multi-layer gradient */
+      background:
+        radial-gradient(circle at 28% 20%, rgba(255,255,255,0.6) 0%, transparent 30%),
+        radial-gradient(circle at 70% 78%, rgba(139,92,246,0.3) 0%, transparent 32%),
+        radial-gradient(circle at 50% 50%, #d8b4fe 0%, #a855f7 45%, #6d28d9 80%, #3b0764 100%);
+      box-shadow:
+        0 0 18px rgba(168,85,247,0.9),
+        0 0 45px rgba(168,85,247,0.55),
+        0 0 90px rgba(168,85,247,0.25),
+        inset 0 0 18px rgba(255,255,255,0.08);
+      animation: orb-idle 2.4s ease-in-out infinite alternate;
     }
 
-    @keyframes floatin {
-      from { transform: translateY(-4px) scale(1);   box-shadow: 0 0 25px #d946ef, 0 0 50px #a855f766; }
-      to   { transform: translateY( 4px) scale(1.04); box-shadow: 0 0 45px #d946ef, 0 0 90px #a855f799; }
+    /* Sonar pulse ring */
+    #target::after {
+      content: '';
+      position: absolute;
+      inset: -18px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(168,85,247,0.55);
+      animation: sonar 1.9s ease-out infinite;
     }
 
-    #start-btn {
-      margin-top: 1.8rem;
-      padding: 0.85rem 2.5rem;
-      font-size: 1.1rem;
+    @keyframes orb-idle {
+      from { transform: translateY(-6px) scale(1);    box-shadow: 0 0 18px rgba(168,85,247,0.9), 0 0 40px rgba(168,85,247,0.5),  0 0 80px rgba(168,85,247,0.2);  }
+      to   { transform: translateY( 6px) scale(1.06); box-shadow: 0 0 28px rgba(168,85,247,1),   0 0 65px rgba(168,85,247,0.65), 0 0 120px rgba(168,85,247,0.3); }
+    }
+
+    @keyframes sonar {
+      0%   { transform: scale(0.8); opacity: 0.75; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    /* ── Flash overlay ──────────────────────────────── */
+    .flash-el {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      pointer-events: none;
+      z-index: 4;
+      transition: opacity 0.4s ease-out;
+    }
+
+    /* ── Start button ───────────────────────────────── */
+    #btn {
+      margin-top: 1.4rem;
+      padding: 0.85rem 3rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
       font-weight: 700;
-      letter-spacing: 1px;
-      background: linear-gradient(135deg, #7c3aed, #a855f7);
-      color: white;
-      border: none;
+      letter-spacing: 0.2em;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--border);
       border-radius: 50px;
       cursor: pointer;
-      box-shadow: 0 4px 20px #7c3aed88;
-      transition: transform 0.15s, box-shadow 0.15s;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       position: relative;
-      z-index: 1;
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s, transform 0.15s;
     }
 
-    #start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px #7c3aedbb; }
-    #start-btn:active { transform: translateY(0); }
-    #start-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    #btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(168,85,247,0.14), rgba(168,85,247,0.04));
+    }
 
-    .history-label {
-      margin-top: 1.5rem;
-      font-size: 0.65rem;
+    #btn:hover:not(:disabled) {
+      border-color: rgba(168,85,247,0.65);
+      box-shadow: 0 0 30px rgba(168,85,247,0.2), inset 0 0 25px rgba(168,85,247,0.08);
+      transform: translateY(-2px);
+    }
+
+    #btn:active:not(:disabled) { transform: translateY(0); }
+    #btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* ── History ────────────────────────────────────── */
+    .hist-label {
+      margin-top: 1.2rem;
+      font-size: 0.58rem;
+      letter-spacing: 0.28em;
+      color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #7c6faa;
     }
 
     #history {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.4rem;
       margin-top: 0.5rem;
       flex-wrap: wrap;
       justify-content: center;
-      max-width: 380px;
+      max-width: 460px;
     }
 
-    .history-chip {
-      background: rgba(255,255,255,0.07);
+    .chip {
+      background: var(--panel);
+      border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 0.25rem 0.7rem;
-      font-size: 0.85rem;
-      color: #c4b5fd;
-      transition: background 0.3s;
+      padding: 0.18rem 0.65rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
     }
   </style>
 </head>
 <body>
 
-  <div class="names">ARCHER · ATLAS · ANTHEM</div>
-  <h1>⚡ REFLEX TESTER ⚡</h1>
-  <p class="subtitle">Who's the fastest in the family?</p>
+<!-- WebGL background -->
+<canvas id="bg"></canvas>
+
+<div id="app">
+  <div class="names">Archer &nbsp;·&nbsp; Atlas &nbsp;·&nbsp; Anthem</div>
+  <h1>Reflex Tester</h1>
+  <p class="tagline">Who strikes fastest?</p>
 
   <div class="scoreboard">
-    <div class="score-box"><div class="label">Last</div><div class="value" id="last-score">—</div></div>
-    <div class="score-box"><div class="label">Best</div><div class="value" id="best-score">—</div></div>
-    <div class="score-box"><div class="label">Rounds</div><div class="value" id="round-count">0</div></div>
+    <div class="score-box"><div class="lbl">Last</div><div class="val" id="v-last">—</div></div>
+    <div class="score-box"><div class="lbl">Best</div><div class="val" id="v-best">—</div></div>
+    <div class="score-box"><div class="lbl">Rounds</div><div class="val" id="v-rounds">0</div></div>
   </div>
 
   <div id="arena-wrap">
     <div id="arena">
-      <div id="message">Press <strong>Start</strong> to play!<br/><span style="font-size:0.85rem;color:#7c6faa">Click the orb the instant it appears.</span></div>
-      <div id="target">✨</div>
+      <div id="msg">
+        <span class="headline">Ready?</span>
+        <span class="sub">Press Start — tap the orb the instant it appears.</span>
+      </div>
+      <div id="target"></div>
     </div>
-    <canvas id="fx-canvas"></canvas>
+    <canvas id="fx"></canvas>
   </div>
 
-  <button id="start-btn">Start</button>
-  <div class="history-label">Recent times (ms)</div>
+  <button id="btn">Start</button>
+  <div class="hist-label">Recent &nbsp;·&nbsp; milliseconds</div>
   <div id="history"></div>
+</div>
 
 <script>
-// ─── DOM ───────────────────────────────────────────────────────────────
-const arena     = document.getElementById('arena');
+// ═══════════════════════════════════════════════════════════════
+// 1. WEBGL BACKGROUND — domain-warped FBM aurora/crystal shader
+// ═══════════════════════════════════════════════════════════════
+(function initWebGL() {
+  const canvas = document.getElementById('bg');
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return; // graceful fallback — CSS bg-color shows
+
+  const VS = `attribute vec2 p; void main(){ gl_Position=vec4(p,0.,1.); }`;
+
+  const FS = `
+  precision mediump float;
+  uniform float T;
+  uniform vec2  R;
+
+  float hash(vec2 p){
+    p=fract(p*vec2(234.34,435.345));
+    p+=dot(p,p+34.23);
+    return fract(p.x*p.y);
+  }
+
+  float noise(vec2 p){
+    vec2 i=floor(p), f=fract(p);
+    f=f*f*(3.-2.*f);
+    return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),
+               mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
+  }
+
+  float fbm(vec2 p){
+    float v=0., a=0.5;
+    mat2 rot=mat2(.8,.6,-.6,.8);
+    for(int i=0;i<5;i++){ v+=a*noise(p); p=rot*p*2.1; a*=.5; }
+    return v;
+  }
+
+  void main(){
+    vec2 uv = gl_FragCoord.xy / R;
+    float t  = T * 0.055;
+
+    // Domain warp — two levels
+    vec2 q = vec2(fbm(uv*2.0 + vec2(t,        t*0.65)),
+                  fbm(uv*2.0 + vec2(5.2+t*0.4, 1.3)));
+    vec2 r = vec2(fbm(uv*3.0 + 3.5*q + vec2(1.7,9.2) + t*0.11),
+                  fbm(uv*3.0 + 3.5*q + vec2(8.3,2.8) + t*0.09));
+    float f = fbm(uv*2.5 + 3.0*r);
+
+    // Color palette: deep indigo → amethyst → sapphire
+    vec3 col = mix(vec3(0.018,0.005,0.065),   // near-black indigo
+                   vec3(0.085,0.028,0.21),     // deep amethyst
+                   clamp(f*f*4.5, 0., 1.));
+    col = mix(col,
+              vec3(0.025,0.095,0.27),          // deep sapphire
+              clamp(f*f, 0., 1.));
+
+    // Gold crystal veins
+    float vein = pow(abs(sin(f*18.+t)), 30.);
+    col += vec3(0.38,0.20,0.02) * vein * 0.4;
+
+    // Amethyst bloom highlights
+    col += vec3(0.09,0.03,0.32) * pow(smoothstep(0.5,0.9,f), 3.) * 0.55;
+
+    // Vignette
+    vec2 vig = uv - .5;
+    col *= 1. - dot(vig,vig) * 1.55;
+
+    gl_FragColor = vec4(col, 1.);
+  }`;
+
+  function makeShader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, makeShader(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, makeShader(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const aP = gl.getAttribLocation(prog, 'p');
+  gl.enableVertexAttribArray(aP);
+  gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0);
+
+  const uT = gl.getUniformLocation(prog, 'T');
+  const uR = gl.getUniformLocation(prog, 'R');
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform2f(uR, canvas.width, canvas.height);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const t0 = performance.now();
+  (function draw() {
+    gl.uniform1f(uT, (performance.now() - t0) / 1000);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(draw);
+  })();
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// 2. PARTICLE + FX SYSTEM (Canvas 2D overlay)
+// ═══════════════════════════════════════════════════════════════
+const fxCanvas  = document.getElementById('fx');
+const fxCtx     = fxCanvas.getContext('2d');
 const arenaWrap = document.getElementById('arena-wrap');
-const target    = document.getElementById('target');
-const message   = document.getElementById('message');
-const startBtn  = document.getElementById('start-btn');
-const lastEl    = document.getElementById('last-score');
-const bestEl    = document.getElementById('best-score');
-const roundEl   = document.getElementById('round-count');
-const historyEl = document.getElementById('history');
-const canvas    = document.getElementById('fx-canvas');
-const ctx       = canvas.getContext('2d');
 
-// ─── Canvas sizing ─────────────────────────────────────────────────────
-function resizeCanvas() {
-  canvas.width  = arenaWrap.clientWidth;
-  canvas.height = arenaWrap.clientHeight;
+function resizeFX() {
+  fxCanvas.width  = arenaWrap.clientWidth;
+  fxCanvas.height = arenaWrap.clientHeight;
 }
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+resizeFX();
+window.addEventListener('resize', resizeFX);
 
-// ─── Particle system ──────────────────────────────────────────────────
-const particles = [];
-const shockwaves = [];
+const PAL = ['#f0abfc','#d946ef','#a855f7','#818cf8',
+             '#38bdf8','#fbbf24','#fb7185','#ffffff','#c4b5fd'];
 
-const PALETTE = [
-  '#f0abfc','#d946ef','#a855f7','#818cf8',
-  '#38bdf8','#4ade80','#fbbf24','#fb7185'
-];
-
+// Glowing particle with physics
 class Particle {
   constructor(x, y, elite) {
-    const angle  = Math.random() * Math.PI * 2;
-    const speed  = elite
-      ? 4 + Math.random() * 10
-      : 2 + Math.random() * 7;
-    this.x  = x;
-    this.y  = y;
-    this.vx = Math.cos(angle) * speed;
-    this.vy = Math.sin(angle) * speed - (elite ? 3 : 1); // bias upward
-    this.gravity   = 0.18 + Math.random() * 0.12;
-    this.drag      = 0.97;
-    this.life      = 1;
-    this.decay     = elite
-      ? 0.012 + Math.random() * 0.01
-      : 0.018 + Math.random() * 0.014;
-    this.color     = PALETTE[Math.floor(Math.random() * PALETTE.length)];
-    this.radius    = elite
-      ? 3 + Math.random() * 5
-      : 2 + Math.random() * 4;
-    // Some particles are little sparks (lines), most are circles
-    this.isSpark   = Math.random() < 0.3;
-    this.sparkLen  = 4 + Math.random() * 12;
-    // Twinkle
-    this.twinkle   = Math.random() < 0.4;
-    this.twinkleT  = Math.random() * Math.PI * 2;
-  }
-
-  update() {
-    this.vx *= this.drag;
-    this.vy *= this.drag;
-    this.vy += this.gravity;
-    this.x  += this.vx;
-    this.y  += this.vy;
-    this.life -= this.decay;
-    if (this.twinkle) this.twinkleT += 0.25;
-  }
-
-  draw(ctx) {
-    const alpha = Math.max(0, this.life);
-    const r = this.twinkle
-      ? this.radius * (0.6 + 0.4 * Math.abs(Math.sin(this.twinkleT)))
-      : this.radius;
-
-    ctx.save();
-    ctx.globalAlpha = alpha;
-
-    if (this.isSpark) {
-      // Glowing spark line
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth   = r * 0.6;
-      ctx.shadowColor = this.color;
-      ctx.shadowBlur  = 8;
-      ctx.beginPath();
-      ctx.moveTo(this.x, this.y);
-      ctx.lineTo(this.x - this.vx * this.sparkLen * 0.2,
-                 this.y - this.vy * this.sparkLen * 0.2);
-      ctx.stroke();
-    } else {
-      // Glowing circle
-      ctx.shadowColor = this.color;
-      ctx.shadowBlur  = 12;
-      ctx.fillStyle   = this.color;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-}
-
-class Shockwave {
-  constructor(x, y, color) {
+    const a = Math.random() * Math.PI * 2;
+    const spd = elite ? 5 + Math.random() * 12 : 2.5 + Math.random() * 7;
     this.x = x; this.y = y;
-    this.radius = 10;
-    this.maxR   = 90;
-    this.life   = 1;
-    this.color  = color || '#a855f7';
+    this.vx = Math.cos(a) * spd;
+    this.vy = Math.sin(a) * spd - (elite ? 4.5 : 1.5);
+    this.grav = 0.16 + Math.random() * 0.1;
+    this.drag = 0.963;
+    this.life = 1;
+    this.decay = elite ? 0.010 + Math.random() * 0.008 : 0.015 + Math.random() * 0.013;
+    this.col   = PAL[Math.floor(Math.random() * PAL.length)];
+    this.r     = elite ? 2.5 + Math.random() * 5 : 1.5 + Math.random() * 3.5;
+    this.spark = Math.random() < 0.32;
+    this.tw    = Math.random() * Math.PI * 2;
   }
   update() {
-    this.radius += (this.maxR - this.radius) * 0.12;
-    this.life   -= 0.045;
+    this.vx *= this.drag; this.vy *= this.drag;
+    this.vy += this.grav;
+    this.x += this.vx; this.y += this.vy;
+    this.life -= this.decay;
+    this.tw += 0.22;
   }
-  draw(ctx) {
-    ctx.save();
-    ctx.globalAlpha = Math.max(0, this.life) * 0.7;
-    ctx.strokeStyle = this.color;
-    ctx.lineWidth   = 2.5;
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur  = 16;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
+  draw(c) {
+    const a = Math.max(0, this.life);
+    const r = this.r * (0.65 + 0.35 * Math.abs(Math.sin(this.tw)));
+    c.save(); c.globalAlpha = a;
+    c.shadowColor = this.col; c.shadowBlur = 12;
+    if (this.spark) {
+      c.strokeStyle = this.col; c.lineWidth = r * 0.55;
+      c.beginPath();
+      c.moveTo(this.x, this.y);
+      c.lineTo(this.x - this.vx * 2.8, this.y - this.vy * 2.8);
+      c.stroke();
+    } else {
+      c.fillStyle = this.col;
+      c.beginPath(); c.arc(this.x, this.y, r, 0, Math.PI * 2); c.fill();
+    }
+    c.restore();
   }
 }
 
-function spawnBurst(x, y, count, elite) {
-  for (let i = 0; i < count; i++) particles.push(new Particle(x, y, elite));
-  shockwaves.push(new Shockwave(x, y, elite ? '#fbbf24' : '#a855f7'));
-  if (elite) shockwaves.push(new Shockwave(x, y, '#f0abfc'));
+// Expanding shockwave ring
+class Shockwave {
+  constructor(x, y, col) {
+    this.x = x; this.y = y;
+    this.r = 10; this.maxR = 110; this.life = 1;
+    this.col = col || '#a855f7';
+  }
+  update() { this.r += (this.maxR - this.r) * 0.10; this.life -= 0.038; }
+  draw(c) {
+    c.save();
+    c.globalAlpha = Math.max(0, this.life) * 0.75;
+    c.strokeStyle = this.col; c.lineWidth = 2.2;
+    c.shadowColor = this.col; c.shadowBlur = 16;
+    c.beginPath(); c.arc(this.x, this.y, this.r, 0, Math.PI * 2); c.stroke();
+    c.restore();
+  }
 }
 
-// ─── Confetti for elite scores ─────────────────────────────────────────
+// Branching lightning bolt — elite hits only
+class Lightning {
+  constructor(x, y) {
+    this.life = 1;
+    this.segs = [];
+    const count = 6 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < count; i++) {
+      const ang = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+      this.segs.push(...this._branch(x, y, ang, 45 + Math.random() * 40, 3));
+    }
+  }
+  _branch(x, y, ang, len, depth) {
+    if (depth === 0 || len < 7) return [];
+    const ex  = x + Math.cos(ang) * len;
+    const ey  = y + Math.sin(ang) * len;
+    const mx  = (x + ex) / 2 + (Math.random() - 0.5) * len * 0.65;
+    const my  = (y + ey) / 2 + (Math.random() - 0.5) * len * 0.65;
+    const out = [{ x1:x, y1:y, x2:mx, y2:my }, { x1:mx, y1:my, x2:ex, y2:ey }];
+    if (Math.random() < 0.5) {
+      out.push(...this._branch(mx, my, ang + (Math.random() - 0.5) * 1.6, len * 0.55, depth - 1));
+    }
+    return out;
+  }
+  update() { this.life -= 0.09; }
+  draw(c) {
+    const a = Math.max(0, this.life);
+    c.save(); c.globalAlpha = a;
+    c.strokeStyle = '#fff'; c.lineWidth = a * 2.2;
+    c.shadowColor = '#c084fc'; c.shadowBlur = 14;
+    for (const s of this.segs) {
+      c.beginPath(); c.moveTo(s.x1, s.y1); c.lineTo(s.x2, s.y2); c.stroke();
+    }
+    c.restore();
+  }
+}
+
+// Confetti for elite
 class Confetti {
   constructor() {
-    this.x    = Math.random() * canvas.width;
-    this.y    = -10;
-    this.vx   = (Math.random() - 0.5) * 2;
-    this.vy   = 2 + Math.random() * 3;
-    this.rot  = Math.random() * Math.PI * 2;
-    this.rotV = (Math.random() - 0.5) * 0.2;
-    this.w    = 6 + Math.random() * 8;
-    this.h    = 3 + Math.random() * 5;
-    this.color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
-    this.life  = 1;
+    this.x = Math.random() * fxCanvas.width; this.y = -12;
+    this.vx = (Math.random() - 0.5) * 2.8; this.vy = 1.8 + Math.random() * 3.2;
+    this.rot = Math.random() * Math.PI * 2; this.rotV = (Math.random() - 0.5) * 0.2;
+    this.w = 5 + Math.random() * 9; this.h = 3 + Math.random() * 5;
+    this.col = PAL[Math.floor(Math.random() * PAL.length)]; this.life = 1;
   }
   update() {
-    this.x   += this.vx;
-    this.y   += this.vy;
-    this.rot += this.rotV;
-    this.life -= 0.006;
+    this.x += this.vx; this.y += this.vy;
+    this.rot += this.rotV; this.life -= 0.005;
   }
-  draw(ctx) {
-    ctx.save();
-    ctx.globalAlpha = Math.max(0, this.life);
-    ctx.fillStyle   = this.color;
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rot);
-    ctx.fillRect(-this.w/2, -this.h/2, this.w, this.h);
-    ctx.restore();
+  draw(c) {
+    c.save(); c.globalAlpha = Math.max(0, this.life);
+    c.fillStyle = this.col;
+    c.translate(this.x, this.y); c.rotate(this.rot);
+    c.fillRect(-this.w/2, -this.h/2, this.w, this.h);
+    c.restore();
   }
 }
-const confetti = [];
-function launchConfetti() {
-  for (let i = 0; i < 80; i++) confetti.push(new Confetti());
+
+const particles = [], shockwaves = [], lightnings = [], confetti = [];
+let fxActive = false;
+
+function fxLoop() {
+  fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+  for (const arr of [shockwaves, particles, lightnings, confetti]) {
+    for (let i = arr.length - 1; i >= 0; i--) {
+      arr[i].update(); arr[i].draw(fxCtx);
+      if (arr[i].life <= 0) arr.splice(i, 1);
+    }
+  }
+  const busy = particles.length || shockwaves.length || lightnings.length || confetti.length;
+  if (busy) requestAnimationFrame(fxLoop);
+  else fxActive = false;
 }
 
-// ─── Animation loop ───────────────────────────────────────────────────
-let animRunning = false;
-function animLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  for (let i = shockwaves.length - 1; i >= 0; i--) {
-    shockwaves[i].update();
-    shockwaves[i].draw(ctx);
-    if (shockwaves[i].life <= 0) shockwaves.splice(i, 1);
+function burst(x, y, count, elite) {
+  for (let i = 0; i < count; i++) particles.push(new Particle(x, y, elite));
+  shockwaves.push(new Shockwave(x, y, elite ? '#fbbf24' : '#a855f7'));
+  if (elite) {
+    shockwaves.push(new Shockwave(x, y, '#f0abfc'));
+    lightnings.push(new Lightning(x, y));
+    for (let i = 0; i < 110; i++) confetti.push(new Confetti());
   }
-
-  for (let i = particles.length - 1; i >= 0; i--) {
-    particles[i].update();
-    particles[i].draw(ctx);
-    if (particles[i].life <= 0) particles.splice(i, 1);
-  }
-
-  for (let i = confetti.length - 1; i >= 0; i--) {
-    confetti[i].update();
-    confetti[i].draw(ctx);
-    if (confetti[i].life <= 0) confetti.splice(i, 1);
-  }
-
-  const busy = particles.length > 0 || shockwaves.length > 0 || confetti.length > 0;
-  if (busy) requestAnimationFrame(animLoop);
-  else animRunning = false;
+  if (!fxActive) { fxActive = true; requestAnimationFrame(fxLoop); }
 }
 
-function triggerFX(x, y, count, elite) {
-  spawnBurst(x, y, count, elite);
-  if (!animRunning) { animRunning = true; requestAnimationFrame(animLoop); }
+
+// ═══════════════════════════════════════════════════════════════
+// 3. SOUND ENGINE — procedural Web Audio
+// ═══════════════════════════════════════════════════════════════
+const SFX = {
+  _ctx: null, _bus: null,
+  _init() {
+    if (!this._ctx) {
+      this._ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this._bus = this._ctx.createGain();
+      this._bus.gain.value = 0.42;
+      this._bus.connect(this._ctx.destination);
+    }
+    if (this._ctx.state === 'suspended') this._ctx.resume();
+  },
+  _tone(freq, type, delay, dur, peak, atk=0.008, rel=0.1) {
+    const c=this._ctx, t=c.currentTime+delay;
+    const o=c.createOscillator(), g=c.createGain();
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(peak,t+atk);
+    g.gain.setValueAtTime(peak,t+dur-rel);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this._bus);
+    o.start(t); o.stop(t+dur+0.05);
+  },
+  // Soft crystalline bell when orb appears
+  appear() {
+    this._init();
+    this._tone(523.25,'sine',0,0.5,0.22,0.015,0.45);
+    this._tone(783.99,'sine',0.04,0.42,0.11,0.015,0.38);
+  },
+  // Hit tone — richer at faster times
+  hit(ms) {
+    this._init();
+    if (ms < 350) {        // Elite: ascending triumphant chord
+      [[1046.5,0],[1318.5,0.06],[1568,0.12],[2093,0.2]].forEach(([f,d]) =>
+        this._tone(f,'sine',d,0.55,0.28,0.005,0.48));
+    } else if (ms < 500) { // Fast: bright double tone
+      this._tone(880,'sine',0,0.45,0.32,0.01,0.38);
+      this._tone(1108.7,'sine',0.04,0.38,0.18,0.01,0.32);
+    } else if (ms < 650) { // Good: warm single tone
+      this._tone(659.25,'sine',0,0.45,0.28,0.01,0.38);
+    } else if (ms < 850) { // Ok: muted tone
+      this._tone(392,'triangle',0,0.38,0.3,0.01,0.32);
+    } else {               // Slow: dull thud
+      this._tone(220,'triangle',0,0.3,0.38,0.005,0.25);
+      this._tone(186,'sine',0,0.25,0.28,0.005,0.2);
+    }
+  },
+  // Ascending shimmer for new personal best
+  newBest() {
+    this._init();
+    [523.25,659.25,783.99,1046.5,1318.5].forEach((f,i) =>
+      this._tone(f,'sine',i*0.09,0.5,0.25,0.01,0.44));
+  },
+  // Dissonant buzz for clicking too early
+  early() {
+    this._init();
+    this._tone(220,'sawtooth',0,0.18,0.32,0.005,0.14);
+    this._tone(196,'square',0.06,0.14,0.25,0.005,0.1);
+  }
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+// 4. GAME LOGIC
+// ═══════════════════════════════════════════════════════════════
+const arena  = document.getElementById('arena');
+const target = document.getElementById('target');
+const msgEl  = document.getElementById('msg');
+const btn    = document.getElementById('btn');
+const vLast  = document.getElementById('v-last');
+const vBest  = document.getElementById('v-best');
+const vRnds  = document.getElementById('v-rounds');
+const histEl = document.getElementById('history');
+
+let state='idle', timer=null, t0=null, bestMs=Infinity, rounds=0;
+const recent = [];
+
+const MSGS = {
+  elite: [
+    "🏆 ELITE — Archer's piano fingers are terrifying.",
+    "🏆 ELITE — Deadpool approves, Atlas.",
+    "🏆 ELITE — Even Anthem paused the snuggles to gasp.",
+    "🏆 ELITE — Trophy-worthy. Archer would know.",
+  ],
+  fast: [
+    "⚡ Lightning fast — Deadpool-approved, Atlas.",
+    "⚡ Those piano hands are lethal, Archer.",
+    "⚡ Anthem's too busy cuddling Mom to beat that.",
+    "⚡ Faster than Deadpool drawing a sword.",
+  ],
+  good: [
+    "😎 Solid. Atlas, did you draw that fast today?",
+    "😎 Nice. Archer played a whole sonata faster though.",
+    "😎 Not bad. Anthem snuggles faster, but still.",
+    "😎 Good reflexes. Trophy incoming?",
+  ],
+  ok: [
+    "👍 Decent. Atlas, Deadpool had better reaction time.",
+    "👍 Room to improve. Archer's piano teacher is watching.",
+    "👍 Like Anthem trying not to wake Mom... barely.",
+    "👍 Anthem wakes Mom faster than that. Every day.",
+  ],
+  slow: [
+    "🐢 Slower than Anthem sneaking in for morning snuggles.",
+    "🐢 Even Deadpool facepalmed. Again, Atlas.",
+    "🐢 Archer played Beethoven in that time.",
+    "🐢 Mom is awake. Anthem is already snuggling.",
+  ],
+  early: [
+    "😬 Too early — Deadpool says: patience, Atlas.",
+    "😬 Too early — Archer always waits for the downbeat.",
+    "😬 Too early — even Anthem's snuggle attack has timing.",
+  ]
+};
+
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const rng  = (a,b) => Math.floor(Math.random() * (b-a+1)) + a;
+
+function orbSize() {
+  return Math.max(74, Math.min(window.innerWidth * 0.13, 104));
 }
 
-// ─── Screen shake ─────────────────────────────────────────────────────
+function orbCenter() {
+  const tr = target.getBoundingClientRect();
+  const ar = arena.getBoundingClientRect();
+  return { x: tr.left - ar.left + tr.width/2, y: tr.top - ar.top + tr.height/2 };
+}
+
 function shake(intensity) {
-  const frames = 10;
   let f = 0;
-  function step() {
-    if (f++ >= frames) { arena.style.transform = ''; return; }
-    const dx = (Math.random() - 0.5) * intensity * (1 - f/frames);
-    const dy = (Math.random() - 0.5) * intensity * (1 - f/frames);
-    arena.style.transform = `translate(${dx}px,${dy}px)`;
+  (function step() {
+    if (f++ >= 12) { arena.style.transform=''; return; }
+    const k = 1 - f/12;
+    arena.style.transform = `translate(${(Math.random()-.5)*intensity*k}px,${(Math.random()-.5)*intensity*k}px)`;
     requestAnimationFrame(step);
-  }
-  step();
+  })();
 }
 
-// ─── Flash overlay ────────────────────────────────────────────────────
-function flashArena(color) {
+function flash(col) {
   const el = document.createElement('div');
-  Object.assign(el.style, {
-    position:'absolute', inset:0, borderRadius:'18px',
-    background: color, opacity: '0.35', pointerEvents: 'none',
-    zIndex: '4', transition: 'opacity 0.35s'
-  });
+  el.className = 'flash-el';
+  el.style.cssText = `background:${col};opacity:0.4;`;
   arena.appendChild(el);
-  requestAnimationFrame(() => { el.style.opacity = '0'; });
-  setTimeout(() => el.remove(), 400);
+  requestAnimationFrame(() => el.style.opacity = '0');
+  setTimeout(() => el.remove(), 450);
 }
 
-// ─── Game state ───────────────────────────────────────────────────────
-let state    = 'idle';
-let showTimer = null;
-let showTime  = null;
-let bestMs    = Infinity;
-let rounds    = 0;
-const recentTimes = [];
-
-const eliteMessages = [
-  "🏆 ELITE! Archer's piano fingers are FAST!",
-  "🏆 ELITE! Deadpool would be proud, Atlas!",
-  "🏆 ELITE! Even Anthem stopped snuggling mom to gasp!",
-  "🏆 ELITE! Trophy-worthy reflexes, Archer!",
-];
-const fastMessages = [
-  "⚡ Lightning fast! Deadpool-approved, Atlas!",
-  "⚡ Those piano hands are LETHAL, Archer!",
-  "⚡ Anthem's too busy cuddling mom to beat that!",
-  "⚡ Faster than Deadpool drawing a sword!",
-];
-const goodMessages = [
-  "😎 Nice! Atlas, did you draw that fast today?",
-  "😎 Solid! Archer played a whole concerto faster though.",
-  "😎 Not bad! Anthem's snuggling faster than this.",
-];
-const okMessages = [
-  "👍 Decent! Atlas, Deadpool had better reaction time.",
-  "👍 Room to improve! Archer's piano teacher is judging.",
-  "👍 You're trying, like Anthem trying NOT to wake Mom...",
-  "👍 Not bad! Anthem wakes Mom up faster than that.",
-];
-const slowMessages = [
-  "🐢 Slower than Anthem sneaking into Mom's bed for snuggles.",
-  "🐢 Even Deadpool facepalmed. Try again, Atlas!",
-  "🐢 Archer could play a whole piano piece in that time.",
-  "🐢 Mom is already awake. Anthem is already snuggling.",
-];
-const earlyMessages = [
-  "😬 TOO EARLY! Deadpool says: patience, Atlas.",
-  "😬 TOO EARLY! Even Anthem waits for Mom to wake up first before snuggles. Kinda.",
-  "😬 TOO EARLY! Archer always waits for the downbeat.",
-];
-
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-
-function randomPos() {
-  const m = 55;
-  return {
-    x: rand(m, arena.clientWidth  - 80 - m),
-    y: rand(m, arena.clientHeight - 80 - m)
-  };
-}
-
-function getTargetCenter() {
-  const r = target.getBoundingClientRect();
-  const a = arena.getBoundingClientRect();
-  return { x: r.left - a.left + r.width/2, y: r.top - a.top + r.height/2 };
+function showMsg(headline, headlineClass, sub, badge) {
+  msgEl.innerHTML =
+    `<span class="headline ${headlineClass||''}">${headline}</span>` +
+    (sub   ? `<span class="sub">${sub}</span>` : '') +
+    (badge ? `<span class="new-best-badge">${badge}</span>` : '');
+  msgEl.style.display = 'flex';
 }
 
 function startRound() {
   state = 'waiting';
-  startBtn.disabled = true;
+  btn.disabled = true;
   target.style.display = 'none';
-  message.style.display = 'flex';
-  message.innerHTML = '⏳ Get ready…';
+  arena.classList.remove('ready');
+  showMsg('⏳', '', 'Get ready…');
 
-  const delay = rand(1500, 4000);
-  showTimer = setTimeout(() => {
-    const pos = randomPos();
-    target.style.left = pos.x + 'px';
-    target.style.top  = pos.y + 'px';
+  timer = setTimeout(() => {
+    const os = orbSize(), m = 42;
+    target.style.left = rng(m, arena.clientWidth  - os - m) + 'px';
+    target.style.top  = rng(m, arena.clientHeight - os - m) + 'px';
     target.style.display = 'flex';
-    message.style.display = 'none';
-    showTime = performance.now();
+    msgEl.style.display  = 'none';
+    arena.classList.add('ready');
+    SFX.appear();
+    t0    = performance.now();
     state = 'ready';
-  }, delay);
+  }, rng(1500, 4200));
 }
 
+// Orb click
 target.addEventListener('click', () => {
   if (state !== 'ready') return;
 
-  const ms    = Math.round(performance.now() - showTime);
+  const ms    = Math.round(performance.now() - t0);
   const elite = ms < 350;
-  const { x, y } = getTargetCenter();
+  const { x, y } = orbCenter();
 
   target.style.display = 'none';
+  arena.classList.remove('ready');
   state = 'idle';
 
-  // FX based on speed
-  const count = elite ? 120 : ms < 500 ? 70 : ms < 650 ? 45 : 25;
-  triggerFX(x, y, count, elite);
-  if (elite) { launchConfetti(); shake(6); }
-  else if (ms < 500) shake(3);
+  // Sound
+  SFX.hit(ms);
 
-  flashArena(elite ? '#fbbf24' : ms < 500 ? '#4ade80' : '#a855f7');
+  // Visual FX — scale intensity to speed
+  const cnt = elite ? 135 : ms < 500 ? 80 : ms < 650 ? 50 : 28;
+  burst(x, y, cnt, elite);
 
+  if      (elite)   { shake(8); flash('#fbbf24'); }
+  else if (ms<500)  { shake(4); flash('#4ade80'); }
+  else if (ms<650)  { shake(2); flash('#a855f7'); }
+  else              { shake(1); flash('#818cf8'); }
+
+  // Score update
   rounds++;
-  roundEl.textContent = rounds;
-  lastEl.textContent  = ms + ' ms';
+  vRnds.textContent = rounds;
+  vLast.textContent = ms + ' ms';
 
+  let isNewBest = false;
   if (ms < bestMs) {
     bestMs = ms;
-    bestEl.textContent = ms + ' ms';
-    bestEl.style.color = '#4ade80';
-    setTimeout(() => bestEl.style.color = '', 800);
+    vBest.textContent = ms + ' ms';
+    vBest.classList.add('new-best');
+    setTimeout(() => vBest.classList.remove('new-best'), 1400);
+    isNewBest = true;
+    setTimeout(() => SFX.newBest(), 250);
   }
 
-  recentTimes.unshift(ms);
-  if (recentTimes.length > 8) recentTimes.pop();
-  historyEl.innerHTML = recentTimes
-    .map(t => `<span class="history-chip">${t}</span>`).join('');
+  recent.unshift(ms);
+  if (recent.length > 8) recent.pop();
+  histEl.innerHTML = recent.map(t => `<span class="chip">${t}</span>`).join('');
 
-  let msg =
-    elite       ? pick(eliteMessages) :
-    ms < 500    ? pick(fastMessages)  :
-    ms < 650    ? pick(goodMessages)  :
-    ms < 850    ? pick(okMessages)    :
-                  pick(slowMessages);
+  // Message
+  const tier = elite ? 'elite' : ms<500 ? 'fast' : ms<650 ? 'good' : ms<850 ? 'ok' : 'slow';
+  showMsg(
+    ms + ' ms',
+    elite ? 'gold' : '',
+    pick(MSGS[tier]),
+    isNewBest ? '✦ New Personal Best ✦' : ''
+  );
 
-  message.style.display = 'flex';
-  message.innerHTML = `<span style="font-size:1.4rem">${ms} ms</span><br/>${msg}`;
-
-  startBtn.disabled = false;
-  startBtn.textContent = 'Again!';
+  btn.disabled = false;
+  btn.textContent = 'Again';
 });
 
-arena.addEventListener('click', (e) => {
-  if (state === 'waiting' && e.target !== target) {
-    clearTimeout(showTimer);
-    state = 'idle';
-    flashArena('#f87171');
-    shake(4);
-    const rect = arena.getBoundingClientRect();
-    triggerFX(e.clientX - rect.left, e.clientY - rect.top, 20, false);
-    message.innerHTML = pick(earlyMessages);
-    startBtn.disabled = false;
-    startBtn.textContent = 'Try Again';
-  }
+// Click arena during wait = too early
+arena.addEventListener('click', e => {
+  if (state !== 'waiting' || e.target === target) return;
+  clearTimeout(timer);
+  state = 'idle';
+  SFX.early();
+  flash('#f87171');
+  shake(5);
+  const ar = arena.getBoundingClientRect();
+  burst(e.clientX - ar.left, e.clientY - ar.top, 28, false);
+  showMsg('Too Early', '', pick(MSGS.early));
+  btn.disabled = false;
+  btn.textContent = 'Try Again';
 });
 
-startBtn.addEventListener('click', () => {
-  startBtn.textContent = 'Start';
+btn.addEventListener('click', () => {
+  btn.textContent = 'Start';
   startRound();
 });
 </script>
